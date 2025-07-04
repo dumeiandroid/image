@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CRUD Data Management</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <style>
+        .table-responsive{max-height:70vh;overflow-y:auto}
+        .btn-sm{padding:.25rem .5rem;font-size:.875rem}
+        .form-control-sm{padding:.25rem .5rem;font-size:.875rem}
+        .modal-body{max-height:60vh;overflow-y:auto}
+    </style>
+</head>
+<body class="bg-light">
+    <div class="container-fluid py-4">
+        <div class="row">
+            <div class="col-12">
+                <div class="card shadow">
+                    <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+                        <h4 class="mb-0"><i class="fas fa-database me-2"></i>Data Management - <span id="tableName">data_latihan</span></h4><p> (masukkan format ?tabel=)</p>
+                        <button class="btn btn-light btn-sm" data-bs-toggle="modal" data-bs-target="#addModal">
+                            <i class="fas fa-plus me-1"></i>Tambah Data
+                        </button>
+                    </div>
+                    <div class="card-body p-0">
+                        <div class="table-responsive">
+                            <table class="table table-striped table-hover mb-0">
+                                <thead class="table-dark sticky-top">
+                                    <tr>
+                                        <th width="50">ID</th>
+                                        <th>x_01</th><th>x_02</th><th>x_03</th><th>x_04</th><th>x_05</th>
+                                        <th>x_06</th><th>x_07</th><th>x_08</th><th>x_09</th><th>x_10</th>
+                                        <th width="120">Aksi</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="dataTable">
+                                    <tr><td colspan="12" class="text-center py-4"><i class="fas fa-spinner fa-spin me-2"></i>Loading...</td></tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add Modal -->
+    <div class="modal fade" id="addModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header bg-success text-white">
+                    <h5 class="modal-title"><i class="fas fa-plus me-2"></i>Tambah Data</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="addForm">
+                        <div class="row g-2">
+                            <div class="col-md-6"><label class="form-label">x_01</label><input type="text" name="x_01" class="form-control form-control-sm"></div>
+                            <div class="col-md-6"><label class="form-label">x_02</label><input type="text" name="x_02" class="form-control form-control-sm"></div>
+                            <div class="col-md-6"><label class="form-label">x_03</label><input type="text" name="x_03" class="form-control form-control-sm"></div>
+                            <div class="col-md-6"><label class="form-label">x_04</label><input type="text" name="x_04" class="form-control form-control-sm"></div>
+                            <div class="col-md-6"><label class="form-label">x_05</label><input type="text" name="x_05" class="form-control form-control-sm"></div>
+                            <div class="col-md-6"><label class="form-label">x_06</label><input type="text" name="x_06" class="form-control form-control-sm"></div>
+                            <div class="col-md-6"><label class="form-label">x_07</label><input type="text" name="x_07" class="form-control form-control-sm"></div>
+                            <div class="col-md-6"><label class="form-label">x_08</label><input type="text" name="x_08" class="form-control form-control-sm"></div>
+                            <div class="col-md-6"><label class="form-label">x_09</label><input type="text" name="x_09" class="form-control form-control-sm"></div>
+                            <div class="col-md-6"><label class="form-label">x_10</label><input type="text" name="x_10" class="form-control form-control-sm"></div>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Batal</button>
+                    <button type="button" class="btn btn-success btn-sm" onclick="saveData()"><i class="fas fa-save me-1"></i>Simpan</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Edit Modal -->
+    <div class="modal fade" id="editModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header bg-warning text-dark">
+                    <h5 class="modal-title"><i class="fas fa-edit me-2"></i>Edit Data</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="editForm">
+                        <input type="hidden" id="editId">
+                        <div class="row g-2">
+                            <div class="col-md-6"><label class="form-label">x_01</label><input type="text" name="x_01" class="form-control form-control-sm"></div>
+                            <div class="col-md-6"><label class="form-label">x_02</label><input type="text" name="x_02" class="form-control form-control-sm"></div>
+                            <div class="col-md-6"><label class="form-label">x_03</label><input type="text" name="x_03" class="form-control form-control-sm"></div>
+                            <div class="col-md-6"><label class="form-label">x_04</label><input type="text" name="x_04" class="form-control form-control-sm"></div>
+                            <div class="col-md-6"><label class="form-label">x_05</label><input type="text" name="x_05" class="form-control form-control-sm"></div>
+                            <div class="col-md-6"><label class="form-label">x_06</label><input type="text" name="x_06" class="form-control form-control-sm"></div>
+                            <div class="col-md-6"><label class="form-label">x_07</label><input type="text" name="x_07" class="form-control form-control-sm"></div>
+                            <div class="col-md-6"><label class="form-label">x_08</label><input type="text" name="x_08" class="form-control form-control-sm"></div>
+                            <div class="col-md-6"><label class="form-label">x_09</label><input type="text" name="x_09" class="form-control form-control-sm"></div>
+                            <div class="col-md-6"><label class="form-label">x_10</label><input type="text" name="x_10" class="form-control form-control-sm"></div>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Batal</button>
+                    <button type="button" class="btn btn-warning btn-sm" onclick="updateData()"><i class="fas fa-save me-1"></i>Update</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.7.0/jquery.min.js"></script>
+    <script>
+        let currentTable = 'data_latihan';
+        
+        $(document).ready(function(){
+            // Get table name from URL
+            const urlParams = new URLSearchParams(window.location.search);
+            currentTable = urlParams.get('tabel') || 'data_latihan';
+            $('#tableName').text(currentTable);
+            
+            loadData();
+        });
+
+        function loadData() {
+            $.ajax({
+                url: `/api/contacts?table=${currentTable}`,
+                method: 'GET',
+                headers: {'X-Table-Name': currentTable},
+                success: function(response) {
+                    let html = '';
+                    if(response.data && response.data.length > 0) {
+                        response.data.forEach(item => {
+                            html += `<tr>
+                                <td>${item.id_x}</td>
+                                <td>${item.x_01||''}</td><td>${item.x_02||''}</td><td>${item.x_03||''}</td><td>${item.x_04||''}</td><td>${item.x_05||''}</td>
+                                <td>${item.x_06||''}</td><td>${item.x_07||''}</td><td>${item.x_08||''}</td><td>${item.x_09||''}</td><td>${item.x_10||''}</td>
+                                <td>
+                                    <button class="btn btn-warning btn-sm me-1" onclick="editData(${item.id_x})"><i class="fas fa-edit"></i></button>
+                                    <button class="btn btn-danger btn-sm" onclick="deleteData(${item.id_x})"><i class="fas fa-trash"></i></button>
+                                </td>
+                            </tr>`;
+                        });
+                    } else {
+                        html = '<tr><td colspan="12" class="text-center py-4 text-muted">Tidak ada data</td></tr>';
+                    }
+                    $('#dataTable').html(html);
+                },
+                error: function() {
+                    $('#dataTable').html('<tr><td colspan="12" class="text-center py-4 text-danger">Error loading data</td></tr>');
+                }
+            });
+        }
+
+        function saveData() {
+            const formData = {};
+            for(let i = 1; i <= 10; i++) {
+                formData[`x_0${i}`] = $(`#addForm input[name="x_0${i}"]`).val() || '';
+            }
+
+            $.ajax({
+                url: `/api/contacts?table=${currentTable}`,
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-Table-Name': currentTable
+                },
+                data: JSON.stringify(formData),
+                success: function() {
+                    $('#addModal').modal('hide');
+                    $('#addForm')[0].reset();
+                    loadData();
+                    showAlert('Data berhasil ditambahkan!', 'success');
+                },
+                error: function() { showAlert('Error menambah data!', 'danger'); }
+            });
+        }
+
+        function editData(id) {
+            $.ajax({
+                url: `/api/contacts/${id}?table=${currentTable}`,
+                method: 'GET',
+                headers: {'X-Table-Name': currentTable},
+                success: function(response) {
+                    if(response.data) {
+                        $('#editId').val(response.data.id_x);
+                        for(let i = 1; i <= 10; i++) {
+                            $(`#editForm input[name="x_0${i}"]`).val(response.data[`x_0${i}`] || '');
+                        }
+                        $('#editModal').modal('show');
+                    }
+                },
+                error: function() { showAlert('Error loading data!', 'danger'); }
+            });
+        }
+
+        function updateData() {
+            const id = $('#editId').val();
+            const formData = {};
+            for(let i = 1; i <= 10; i++) {
+                formData[`x_0${i}`] = $(`#editForm input[name="x_0${i}"]`).val() || '';
+            }
+
+            $.ajax({
+                url: `/api/contacts/${id}?table=${currentTable}`,
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-Table-Name': currentTable
+                },
+                data: JSON.stringify(formData),
+                success: function() {
+                    $('#editModal').modal('hide');
+                    loadData();
+                    showAlert('Data berhasil diupdate!', 'success');
+                },
+                error: function() { showAlert('Error update data!', 'danger'); }
+            });
+        }
+
+        function deleteData(id) {
+            if(confirm('Yakin ingin menghapus data ini?')) {
+                $.ajax({
+                    url: `/api/contacts/${id}?table=${currentTable}`,
+                    method: 'DELETE',
+                    headers: {'X-Table-Name': currentTable},
+                    success: function() {
+                        loadData();
+                        showAlert('Data berhasil dihapus!', 'success');
+                    },
+                    error: function() { showAlert('Error hapus data!', 'danger'); }
+                });
+            }
+        }
+
+        function showAlert(message, type) {
+            const alertHtml = `<div class="alert alert-${type} alert-dismissible fade show position-fixed" style="top:20px;right:20px;z-index:9999">
+                ${message}<button type="button" class="btn-close" data-bs-dismiss="alert"></button></div>`;
+            $('body').append(alertHtml);
+            setTimeout(() => $('.alert').alert('close'), 3000);
+        }
+    </script>
+</body>
+</html>
