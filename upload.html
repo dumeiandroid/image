@@ -1,221 +1,286 @@
 <!DOCTYPE html>
-<html lang="id">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>File Upload Dashboard</title>
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/css/bootstrap.min.css" rel="stylesheet">
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <title>Upload File ke R2</title>
     <style>
-        .drop-zone {
-            border: 2px dashed #007bff;
-            border-radius: 8px;
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .upload-container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .upload-area {
+            border: 2px dashed #ddd;
+            border-radius: 10px;
             padding: 40px;
             text-align: center;
-            background: #f8f9fa;
-            transition: all 0.3s;
+            margin-bottom: 20px;
+            transition: all 0.3s ease;
         }
-        .drop-zone:hover { background: #e9ecef; }
-        .drop-zone.dragover { background: #cce5ff; border-color: #0056b3; }
-        .file-card { transition: transform 0.2s; }
-        .file-card:hover { transform: translateY(-5px); }
-        .file-thumbnail { width: 120px; height: 120px; object-fit: cover; }
-        .file-icon { font-size: 60px; color: #6c757d; }
+        .upload-area:hover {
+            border-color: #007bff;
+            background-color: #f8f9fa;
+        }
+        .upload-area.dragover {
+            border-color: #007bff;
+            background-color: #e3f2fd;
+        }
+        .file-input {
+            display: none;
+        }
+        .upload-btn {
+            background-color: #007bff;
+            color: white;
+            padding: 12px 30px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            margin: 10px;
+        }
+        .upload-btn:hover {
+            background-color: #0056b3;
+        }
+        .upload-btn:disabled {
+            background-color: #ccc;
+            cursor: not-allowed;
+        }
+        .preview-container {
+            margin-top: 20px;
+            text-align: center;
+        }
+        .preview-image {
+            max-width: 300px;
+            max-height: 300px;
+            border-radius: 5px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+        }
+        .progress-bar {
+            width: 100%;
+            height: 20px;
+            background-color: #f0f0f0;
+            border-radius: 10px;
+            overflow: hidden;
+            margin: 10px 0;
+            display: none;
+        }
+        .progress-fill {
+            height: 100%;
+            background-color: #007bff;
+            width: 0%;
+            transition: width 0.3s ease;
+        }
+        .message {
+            padding: 15px;
+            border-radius: 5px;
+            margin: 10px 0;
+            display: none;
+        }
+        .success {
+            background-color: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        .error {
+            background-color: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        .file-info {
+            text-align: left;
+            background-color: #f8f9fa;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 10px 0;
+            display: none;
+        }
     </style>
 </head>
 <body>
-    <div class="container mt-4">
-        <h1 class="text-center mb-4"><i class="fas fa-cloud-upload-alt"></i> File Upload Dashboard</h1>
+    <div class="upload-container">
+        <h1>Upload File ke R2 Storage</h1>
         
-        <!-- Upload Section -->
-        <div class="card mb-4">
-            <div class="card-body">
-                <div class="row">
-                    <div class="col-md-3">
-                        <label class="form-label">Folder Tujuan:</label>
-                        <select class="form-select" id="folderSelect">
-                            <option value="images">Images</option>
-                            <option value="documents">Documents</option>
-                            <option value="media">Media</option>
-                            <option value="files">Files</option>
-                        </select>
-                    </div>
-                    <div class="col-md-9">
-                        <div class="drop-zone" id="dropZone">
-                            <i class="fas fa-cloud-upload-alt fa-3x text-muted mb-3"></i>
-                            <p class="mb-2">Drag & drop files here or <button class="btn btn-link p-0" onclick="$('#fileInput').click()">browse</button></p>
-                            <input type="file" id="fileInput" class="d-none" multiple>
-                        </div>
-                    </div>
-                </div>
-                <div class="progress mt-3 d-none" id="progressBar">
-                    <div class="progress-bar" role="progressbar" style="width: 0%"></div>
-                </div>
-            </div>
+        <div class="upload-area" id="uploadArea">
+            <p>Drag & drop file di sini atau klik untuk memilih file</p>
+            <button type="button" class="upload-btn" onclick="document.getElementById('fileInput').click()">
+                Pilih File
+            </button>
+            <input type="file" id="fileInput" class="file-input" accept="image/*" multiple>
         </div>
 
-        <!-- Dashboard Section -->
-        <div class="card">
-            <div class="card-header d-flex justify-content-between align-items-center">
-                <h5 class="mb-0"><i class="fas fa-images"></i> File Dashboard</h5>
-                <button class="btn btn-sm btn-outline-primary" onclick="loadFiles()">
-                    <i class="fas fa-sync"></i> Refresh
-                </button>
-            </div>
-            <div class="card-body">
-                <div class="row" id="fileGrid">
-                    <div class="col-12 text-center">
-                        <i class="fas fa-spinner fa-spin"></i> Loading files...
-                    </div>
-                </div>
-            </div>
+        <div class="file-info" id="fileInfo"></div>
+
+        <div class="progress-bar" id="progressBar">
+            <div class="progress-fill" id="progressFill"></div>
         </div>
+
+        <div class="preview-container" id="previewContainer"></div>
+
+        <div class="message" id="message"></div>
+
+        <button type="button" class="upload-btn" id="uploadBtn" onclick="uploadFiles()" disabled>
+            Upload Files
+        </button>
     </div>
 
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.7.0/jquery.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/js/bootstrap.bundle.min.js"></script>
     <script>
-        const API_BASE = 'https://your-worker-domain.workers.dev/api';
-        const IMG_BASE = 'https://image-7s8.pages.dev';
-        
-        // Drag & Drop
-        $('#dropZone').on('dragover', function(e) {
+        const uploadArea = document.getElementById('uploadArea');
+        const fileInput = document.getElementById('fileInput');
+        const fileInfo = document.getElementById('fileInfo');
+        const progressBar = document.getElementById('progressBar');
+        const progressFill = document.getElementById('progressFill');
+        const previewContainer = document.getElementById('previewContainer');
+        const message = document.getElementById('message');
+        const uploadBtn = document.getElementById('uploadBtn');
+
+        let selectedFiles = [];
+
+        // Drag & Drop Events
+        uploadArea.addEventListener('dragover', (e) => {
             e.preventDefault();
-            $(this).addClass('dragover');
-        }).on('dragleave', function() {
-            $(this).removeClass('dragover');
-        }).on('drop', function(e) {
-            e.preventDefault();
-            $(this).removeClass('dragover');
-            handleFiles(e.originalEvent.dataTransfer.files);
+            uploadArea.classList.add('dragover');
         });
 
-        $('#fileInput').on('change', function() {
-            handleFiles(this.files);
+        uploadArea.addEventListener('dragleave', () => {
+            uploadArea.classList.remove('dragover');
+        });
+
+        uploadArea.addEventListener('drop', (e) => {
+            e.preventDefault();
+            uploadArea.classList.remove('dragover');
+            const files = Array.from(e.dataTransfer.files);
+            handleFiles(files);
+        });
+
+        // File Input Change
+        fileInput.addEventListener('change', (e) => {
+            const files = Array.from(e.target.files);
+            handleFiles(files);
         });
 
         function handleFiles(files) {
-            const folder = $('#folderSelect').val();
-            Array.from(files).forEach(file => uploadFile(file, folder));
-        }
-
-        function uploadFile(file, folder) {
-            const formData = new FormData();
-            formData.append('file', file);
-            formData.append('folder', folder);
+            selectedFiles = files.filter(file => file.type.startsWith('image/'));
             
-            $('#progressBar').removeClass('d-none');
-            
-            $.ajax({
-                url: `${API_BASE}/upload`,
-                type: 'POST',
-                data: formData,
-                processData: false,
-                contentType: false,
-                xhr: function() {
-                    const xhr = new window.XMLHttpRequest();
-                    xhr.upload.addEventListener("progress", function(e) {
-                        if (e.lengthComputable) {
-                            const percent = Math.round((e.loaded / e.total) * 100);
-                            $('#progressBar .progress-bar').css('width', percent + '%');
-                        }
-                    });
-                    return xhr;
-                },
-                success: function(response) {
-                    if (response.success) {
-                        saveToDatabase(file, folder, response.url);
-                    }
-                },
-                error: function() {
-                    alert('Upload failed!');
-                },
-                complete: function() {
-                    setTimeout(() => $('#progressBar').addClass('d-none'), 1000);
-                }
-            });
-        }
-
-        function saveToDatabase(file, folder, url) {
-            const data = {
-                x_01: file.name,
-                x_02: url.split('/').pop(),
-                x_03: url,
-                x_04: file.type,
-                x_05: file.size.toString(),
-                x_06: new Date().toISOString(),
-                x_07: folder
-            };
-
-            $.ajax({
-                url: `${API_BASE}/contacts?table=gambar`,
-                type: 'POST',
-                headers: {'Content-Type': 'application/json'},
-                data: JSON.stringify(data),
-                success: function() {
-                    loadFiles();
-                }
-            });
-        }
-
-        function loadFiles() {
-            $.get(`${API_BASE}/contacts?table=gambar`, function(response) {
-                if (response.success) {
-                    displayFiles(response.data);
-                }
-            });
-        }
-
-        function displayFiles(files) {
-            const grid = $('#fileGrid');
-            grid.empty();
-            
-            if (!files.length) {
-                grid.html('<div class="col-12 text-center text-muted">No files uploaded yet</div>');
+            if (selectedFiles.length === 0) {
+                showMessage('Silakan pilih file gambar yang valid', 'error');
                 return;
             }
 
-            files.forEach(file => {
-                const isImage = file.x_04 && file.x_04.startsWith('image/');
-                const card = `
-                    <div class="col-lg-3 col-md-4 col-sm-6 mb-3">
-                        <div class="card file-card h-100">
-                            <div class="card-body text-center p-3">
-                                ${isImage ? 
-                                    `<img src="${file.x_03}" class="file-thumbnail rounded mb-2" alt="${file.x_01}">` :
-                                    `<div class="file-icon mb-2"><i class="fas fa-file"></i></div>`
-                                }
-                                <h6 class="card-title small mb-2" title="${file.x_01}">${file.x_01.length > 20 ? file.x_01.substring(0, 17) + '...' : file.x_01}</h6>
-                                <a href="${file.x_03}" target="_blank" class="btn btn-sm btn-outline-primary">
-                                    <i class="fas fa-external-link-alt"></i> Open
-                                </a>
-                                <button class="btn btn-sm btn-outline-danger ms-1" onclick="deleteFile(${file.id_x})">
-                                    <i class="fas fa-trash"></i>
-                                </button>
-                            </div>
-                        </div>
+            displayFileInfo();
+            displayPreview();
+            uploadBtn.disabled = false;
+        }
+
+        function displayFileInfo() {
+            let info = '<h3>File yang dipilih:</h3>';
+            selectedFiles.forEach((file, index) => {
+                info += `
+                    <div>
+                        <strong>${file.name}</strong> - 
+                        ${(file.size / 1024 / 1024).toFixed(2)} MB - 
+                        ${file.type}
                     </div>
                 `;
-                grid.append(card);
+            });
+            fileInfo.innerHTML = info;
+            fileInfo.style.display = 'block';
+        }
+
+        function displayPreview() {
+            previewContainer.innerHTML = '';
+            selectedFiles.forEach((file, index) => {
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    const img = document.createElement('img');
+                    img.src = e.target.result;
+                    img.className = 'preview-image';
+                    img.style.margin = '10px';
+                    previewContainer.appendChild(img);
+                };
+                reader.readAsDataURL(file);
             });
         }
 
-        function deleteFile(id) {
-            if (confirm('Delete this file?')) {
-                $.ajax({
-                    url: `${API_BASE}/contacts/${id}?table=gambar`,
-                    type: 'DELETE',
-                    success: function() {
-                        loadFiles();
-                    }
-                });
+        async function uploadFiles() {
+            if (selectedFiles.length === 0) return;
+
+            uploadBtn.disabled = true;
+            progressBar.style.display = 'block';
+            message.style.display = 'none';
+
+            try {
+                const results = [];
+                
+                for (let i = 0; i < selectedFiles.length; i++) {
+                    const file = selectedFiles[i];
+                    const formData = new FormData();
+                    formData.append('file', file);
+
+                    const response = await fetch('/api/upload', {
+                        method: 'POST',
+                        body: formData,
+                        headers: {
+                            'X-Table-Name': 'gambar' // bisa disesuaikan
+                        }
+                    });
+
+                    const result = await response.json();
+                    results.push(result);
+
+                    // Update progress
+                    const progress = ((i + 1) / selectedFiles.length) * 100;
+                    progressFill.style.width = progress + '%';
+                }
+
+                // Show results
+                const successCount = results.filter(r => r.success).length;
+                const errorCount = results.length - successCount;
+
+                if (successCount > 0) {
+                    showMessage(`${successCount} file berhasil diupload`, 'success');
+                }
+                if (errorCount > 0) {
+                    showMessage(`${errorCount} file gagal diupload`, 'error');
+                }
+
+                // Reset form
+                setTimeout(() => {
+                    resetForm();
+                }, 3000);
+
+            } catch (error) {
+                console.error('Upload error:', error);
+                showMessage('Upload gagal: ' + error.message, 'error');
+            } finally {
+                uploadBtn.disabled = false;
+                progressBar.style.display = 'none';
             }
         }
 
-        // Load files on page load
-        $(document).ready(function() {
-            loadFiles();
-        });
+        function showMessage(text, type) {
+            message.textContent = text;
+            message.className = `message ${type}`;
+            message.style.display = 'block';
+        }
+
+        function resetForm() {
+            selectedFiles = [];
+            fileInput.value = '';
+            fileInfo.style.display = 'none';
+            previewContainer.innerHTML = '';
+            uploadBtn.disabled = true;
+            progressFill.style.width = '0%';
+            message.style.display = 'none';
+        }
     </script>
 </body>
 </html>

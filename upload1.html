@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>File Upload Dashboard</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        .drop-zone {
+            border: 2px dashed #007bff;
+            border-radius: 8px;
+            padding: 40px;
+            text-align: center;
+            background: #f8f9fa;
+            transition: all 0.3s;
+        }
+        .drop-zone:hover { background: #e9ecef; }
+        .drop-zone.dragover { background: #cce5ff; border-color: #0056b3; }
+        .file-card { transition: transform 0.2s; }
+        .file-card:hover { transform: translateY(-5px); }
+        .file-thumbnail { width: 120px; height: 120px; object-fit: cover; }
+        .file-icon { font-size: 60px; color: #6c757d; }
+    </style>
+</head>
+<body>
+    <div class="container mt-4">
+        <h1 class="text-center mb-4"><i class="fas fa-cloud-upload-alt"></i> File Upload Dashboard</h1>
+        
+        <!-- Upload Section -->
+        <div class="card mb-4">
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-3">
+                        <label class="form-label">Folder Tujuan:</label>
+                        <select class="form-select" id="folderSelect">
+                            <option value="images">Images</option>
+                            <option value="documents">Documents</option>
+                            <option value="media">Media</option>
+                            <option value="files">Files</option>
+                        </select>
+                    </div>
+                    <div class="col-md-9">
+                        <div class="drop-zone" id="dropZone">
+                            <i class="fas fa-cloud-upload-alt fa-3x text-muted mb-3"></i>
+                            <p class="mb-2">Drag & drop files here or <button class="btn btn-link p-0" onclick="$('#fileInput').click()">browse</button></p>
+                            <input type="file" id="fileInput" class="d-none" multiple>
+                        </div>
+                    </div>
+                </div>
+                <div class="progress mt-3 d-none" id="progressBar">
+                    <div class="progress-bar" role="progressbar" style="width: 0%"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Dashboard Section -->
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="mb-0"><i class="fas fa-images"></i> File Dashboard</h5>
+                <button class="btn btn-sm btn-outline-primary" onclick="loadFiles()">
+                    <i class="fas fa-sync"></i> Refresh
+                </button>
+            </div>
+            <div class="card-body">
+                <div class="row" id="fileGrid">
+                    <div class="col-12 text-center">
+                        <i class="fas fa-spinner fa-spin"></i> Loading files...
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.7.0/jquery.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/js/bootstrap.bundle.min.js"></script>
+    <script>
+        const API_BASE = 'https://your-worker-domain.workers.dev/api';
+        const IMG_BASE = 'https://image-7s8.pages.dev';
+        
+        // Drag & Drop
+        $('#dropZone').on('dragover', function(e) {
+            e.preventDefault();
+            $(this).addClass('dragover');
+        }).on('dragleave', function() {
+            $(this).removeClass('dragover');
+        }).on('drop', function(e) {
+            e.preventDefault();
+            $(this).removeClass('dragover');
+            handleFiles(e.originalEvent.dataTransfer.files);
+        });
+
+        $('#fileInput').on('change', function() {
+            handleFiles(this.files);
+        });
+
+        function handleFiles(files) {
+            const folder = $('#folderSelect').val();
+            Array.from(files).forEach(file => uploadFile(file, folder));
+        }
+
+        function uploadFile(file, folder) {
+            const formData = new FormData();
+            formData.append('file', file);
+            formData.append('folder', folder);
+            
+            $('#progressBar').removeClass('d-none');
+            
+            $.ajax({
+                url: `${API_BASE}/upload`,
+                type: 'POST',
+                data: formData,
+                processData: false,
+                contentType: false,
+                xhr: function() {
+                    const xhr = new window.XMLHttpRequest();
+                    xhr.upload.addEventListener("progress", function(e) {
+                        if (e.lengthComputable) {
+                            const percent = Math.round((e.loaded / e.total) * 100);
+                            $('#progressBar .progress-bar').css('width', percent + '%');
+                        }
+                    });
+                    return xhr;
+                },
+                success: function(response) {
+                    if (response.success) {
+                        saveToDatabase(file, folder, response.url);
+                    }
+                },
+                error: function() {
+                    alert('Upload failed!');
+                },
+                complete: function() {
+                    setTimeout(() => $('#progressBar').addClass('d-none'), 1000);
+                }
+            });
+        }
+
+        function saveToDatabase(file, folder, url) {
+            const data = {
+                x_01: file.name,
+                x_02: url.split('/').pop(),
+                x_03: url,
+                x_04: file.type,
+                x_05: file.size.toString(),
+                x_06: new Date().toISOString(),
+                x_07: folder
+            };
+
+            $.ajax({
+                url: `${API_BASE}/contacts?table=gambar`,
+                type: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                data: JSON.stringify(data),
+                success: function() {
+                    loadFiles();
+                }
+            });
+        }
+
+        function loadFiles() {
+            $.get(`${API_BASE}/contacts?table=gambar`, function(response) {
+                if (response.success) {
+                    displayFiles(response.data);
+                }
+            });
+        }
+
+        function displayFiles(files) {
+            const grid = $('#fileGrid');
+            grid.empty();
+            
+            if (!files.length) {
+                grid.html('<div class="col-12 text-center text-muted">No files uploaded yet</div>');
+                return;
+            }
+
+            files.forEach(file => {
+                const isImage = file.x_04 && file.x_04.startsWith('image/');
+                const card = `
+                    <div class="col-lg-3 col-md-4 col-sm-6 mb-3">
+                        <div class="card file-card h-100">
+                            <div class="card-body text-center p-3">
+                                ${isImage ? 
+                                    `<img src="${file.x_03}" class="file-thumbnail rounded mb-2" alt="${file.x_01}">` :
+                                    `<div class="file-icon mb-2"><i class="fas fa-file"></i></div>`
+                                }
+                                <h6 class="card-title small mb-2" title="${file.x_01}">${file.x_01.length > 20 ? file.x_01.substring(0, 17) + '...' : file.x_01}</h6>
+                                <a href="${file.x_03}" target="_blank" class="btn btn-sm btn-outline-primary">
+                                    <i class="fas fa-external-link-alt"></i> Open
+                                </a>
+                                <button class="btn btn-sm btn-outline-danger ms-1" onclick="deleteFile(${file.id_x})">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                grid.append(card);
+            });
+        }
+
+        function deleteFile(id) {
+            if (confirm('Delete this file?')) {
+                $.ajax({
+                    url: `${API_BASE}/contacts/${id}?table=gambar`,
+                    type: 'DELETE',
+                    success: function() {
+                        loadFiles();
+                    }
+                });
+            }
+        }
+
+        // Load files on page load
+        $(document).ready(function() {
+            loadFiles();
+        });
+    </script>
+</body>
+</html>
