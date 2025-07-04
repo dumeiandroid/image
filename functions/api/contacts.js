@@ -1,7 +1,7 @@
 // functions/api/contacts.js - Dynamic table version with auto-create
 export async function onRequest(context) {
   const { request, env } = context;
-  const { DB_PENERBIT } = env;
+  const { DB_IMAGE } = env;
   const method = request.method;
   const url = new URL(request.url);
   
@@ -36,9 +36,9 @@ export async function onRequest(context) {
   try {
     switch (method) {
       case 'GET':
-        return await getContacts(DB_PENERBIT, tableName, corsHeaders);
+        return await getContacts(DB_IMAGE, tableName, corsHeaders);
       case 'POST':
-        return await createContact(request, DB_PENERBIT, tableName, corsHeaders);
+        return await createContact(request, DB_IMAGE, tableName, corsHeaders);
       default:
         return new Response(JSON.stringify({ error: `Method ${method} not allowed` }), { 
           status: 405, 
@@ -63,7 +63,7 @@ function isValidTableName(tableName) {
 }
 
 // Function to create table if not exists
-async function createTableIfNotExists(DB_PENERBIT, tableName) {
+async function createTableIfNotExists(DB_IMAGE, tableName) {
   const createTableQuery = `
     CREATE TABLE IF NOT EXISTS ${tableName} (
       id_x INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -90,27 +90,27 @@ async function createTableIfNotExists(DB_PENERBIT, tableName) {
     )
   `;
   
-  await DB_PENERBIT.prepare(createTableQuery).run();
+  await DB_IMAGE.prepare(createTableQuery).run();
   console.log(`Table '${tableName}' created or already exists`);
 }
 
 // GET all contacts - Dynamic table version with auto-create
-async function getContacts(DB_PENERBIT, tableName, corsHeaders) {
+async function getContacts(DB_IMAGE, tableName, corsHeaders) {
   console.log(`Getting all data from table: ${tableName}...`);
   
   try {
     // Check if table exists first
-    const tableCheck = await DB_PENERBIT.prepare(`
+    const tableCheck = await DB_IMAGE.prepare(`
       SELECT name FROM sqlite_master WHERE type='table' AND name=?
     `).bind(tableName).first();
     
     if (!tableCheck) {
       console.log(`Table '${tableName}' does not exist, creating...`);
-      await createTableIfNotExists(DB_PENERBIT, tableName);
+      await createTableIfNotExists(DB_IMAGE, tableName);
     }
     
     const query = `SELECT * FROM ${tableName} ORDER BY id_x DESC`;
-    const { results } = await DB_PENERBIT.prepare(query).all();
+    const { results } = await DB_IMAGE.prepare(query).all();
     console.log(`Found ${results.length} records in ${tableName}`);
     
     return new Response(JSON.stringify({
@@ -133,7 +133,7 @@ async function getContacts(DB_PENERBIT, tableName, corsHeaders) {
 }
 
 // POST create contact - Dynamic table version with auto-create
-async function createContact(request, DB_PENERBIT, tableName, corsHeaders) {
+async function createContact(request, DB_IMAGE, tableName, corsHeaders) {
   console.log(`Creating new record in table: ${tableName}...`);
   
   let requestData;
@@ -146,13 +146,13 @@ async function createContact(request, DB_PENERBIT, tableName, corsHeaders) {
   
   try {
     // Check if table exists first
-    const tableCheck = await DB_PENERBIT.prepare(`
+    const tableCheck = await DB_IMAGE.prepare(`
       SELECT name FROM sqlite_master WHERE type='table' AND name=?
     `).bind(tableName).first();
     
     if (!tableCheck) {
       console.log(`Table '${tableName}' does not exist, creating...`);
-      await createTableIfNotExists(DB_PENERBIT, tableName);
+      await createTableIfNotExists(DB_IMAGE, tableName);
     }
     
     // Extract data for x_01 to x_20 columns
@@ -181,7 +181,7 @@ async function createContact(request, DB_PENERBIT, tableName, corsHeaders) {
     console.log('Insert query:', query);
     console.log('Values:', values);
     
-    const result = await DB_PENERBIT.prepare(query).bind(...values).run();
+    const result = await DB_IMAGE.prepare(query).bind(...values).run();
     console.log('Insert result:', result);
     
     return new Response(JSON.stringify({ 
